@@ -20,47 +20,10 @@ class pStatus(str, Enum):
     living_together = "T"
     living_apart = "A"
 
-class mEdu(int, Enum):
-    no_education = 0
-    primary_education = 1
-    fifth_to_9th_grade = 2
-    secondary_education = 3
-    higher_education = 4
 
-
-class fEdu(int, Enum):
-    no_education = 0
-    primary_education = 1
-    fifth_to_9th_grade = 2
-    secondary_education = 3
-    higher_education = 4
-
-
-class mJob(int, Enum):
-    at_home = 0
-    health = 1
-    services = 3
-    teacher = 4
-    other = 2
-
-class fJob(int, Enum):
-    at_home = 0
-    health = 1
-    services = 3
-    teacher = 4
-    other = 2
-
-
-
-class reason(int, Enum):
-    course = 0
-    home = 1
-    other = 2
-    reputation = 3
-
-class guardian(int, Enum):
-    father = 0
-    mother = 1
+class Guardian(int, Enum):
+    none = 0
+    yes = 1
 
 
 class travel_time(int, Enum):
@@ -92,11 +55,6 @@ class Famsup(int, Enum):
     yes = 1
 
 
-class Paid(int, Enum):
-    no = 0
-    yes = 1
-
-
 class Activities(int, Enum):
     no = 0
     yes = 1
@@ -107,7 +65,50 @@ class Nursery(int, Enum):
     yes = 1
 
 
+class FamilyRelationship(int, Enum):
+    very_poor = 1
+    poor = 2
+    average = 3
+    good = 4
+    very_good = 5
 
+
+class HealthStatus(int, Enum):
+    very_poor = 1
+    poor = 2
+    average = 3
+    good = 4
+    very_good = 5
+
+
+
+
+class FreeTime(int, Enum):
+    very_low = 1
+    low = 2
+    average = 3
+    free = 4
+    very_free = 5
+
+
+
+class GoOut(int, Enum):
+    very_low = 1
+    low = 2
+    average = 3
+    high = 4
+    very_high = 5
+
+
+class Internet(int, Enum):
+    no = 0
+    yes = 1
+
+
+
+class Romantic(int, Enum):
+    no = 0
+    yes = 1
 
 
 
@@ -121,18 +122,23 @@ class StudentDetails(BaseModel):
     address: addressType
     famsize: famSize
     Pstatus: pStatus
-    Medu: mEdu
-    Fedu: fEdu
-    Mjob: mJob
-    Fjob: fJob
-    reason: reason
-    guardian: guardian
+    guardian: Guardian
     traveltime: travel_time
     studytime: study_time
     failures: Failures
     schoolsup: Schoolsup
     famsup: Famsup
-    paid: Paid
     activities: Activities
     nursery: Nursery
-    
+    famrel: FamilyRelationship
+    health: HealthStatus
+    absences: int
+    freetime: FreeTime
+    goout: GoOut
+    internet: Internet
+    romantic: Romantic
+
+
+
+
+
