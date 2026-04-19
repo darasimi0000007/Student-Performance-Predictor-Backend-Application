@@ -1,6 +1,6 @@
 # Student Performance Predictor
 Project Overview:
-This project is a backend system focused on predicting the performance of a student according to different individual factors
+This project is a backend system focused on predicting the performance of a student according to his individual qualities.
 
 
 Dataset Summary:
@@ -16,7 +16,7 @@ Check the page for what each column means:
 
 Column headers are the same for both datasets
 
-Columns to drop for feature set: school, medu, fedu, Dalc, Walc. This application does not require to know your school unlike the dataset that kept records on whether you attended Gabriel Pereira or Mousinho de Silveira school. For user convenience, I am working to filtering out the least important feature sets so we don't bore users with details to fill.(medu, fedu, Dalc, Walc)
+Columns to drop for feature set: school, medu, fedu, Dalc, Walc, higher, Mjob, Fjob, reason, paid. This application does not require to know your school unlike the dataset that kept records on whether you attended Gabriel Pereira or Mousinho de Silveira school. 
 
 each categorical column in both datasets and their respective encoder meaning using LabelEncoder
 sex F-0, M-1
@@ -43,7 +43,19 @@ Models Used:
 RandomForestClassifier
 GradientBoostingClassifier
 Support Vector Machine
+
+
 Used VotingClassifier from sklearn to merge the models 
 
 
-Getting roc_auc scores that are +-0.02 of each other. No difference. Tried different hyperparameter tunings types for the models. Still working on it. 
+
+
+BACKEND DEVELOPMENT
+Using a database to store records of predictions made with data used for prediction
+
+
+
+
+
+"sex", "age", "address", "famsize", "Pstatus", "guardian", "traveltime", "studytime", "failures", "schoolsup", "famsup", "activities", "nursery", "famrel", "health", "absences", "freetime", "goout", "internet", "romantic"
+

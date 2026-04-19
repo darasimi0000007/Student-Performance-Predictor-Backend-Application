@@ -5,7 +5,8 @@ class Blog(Base):
 
     __tablename__ = "Student Performance Details"
     
-    FullName = Column(String, primary_key=True, index=True)
+
+    student_id = Column(Integer, primary_key = True, index = True)
     sex = Column(String)
     age = Column(String)
     address = Column(String)
@@ -26,7 +27,7 @@ class Blog(Base):
     goout = Column(Integer)
     internet = Column(Integer)
     romantic = Column(Integer)
-    Prediction = Column(Integer)
+    Prediction = Column(String)
 
 
 

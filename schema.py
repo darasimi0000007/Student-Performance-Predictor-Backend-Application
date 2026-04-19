@@ -21,9 +21,10 @@ class pStatus(str, Enum):
     living_apart = "A"
 
 
-class Guardian(int, Enum):
-    none = 0
-    yes = 1
+class Guardian(str, Enum):
+    mother = "mother"
+    father = "father"
+    other = "other"
 
 
 class travel_time(int, Enum):
@@ -45,24 +46,24 @@ class Failures(int, Enum):
     two = 2
     three_or_more = 3
 
-class Schoolsup(int, Enum):
-    no = 0
-    yes = 1
+class Schoolsup(str, Enum):
+    no = "no"
+    yes = "yes"
 
 
-class Famsup(int, Enum):
-    no = 0
-    yes = 1
+class Famsup(str, Enum):
+    no = "no"
+    yes = "yes"
 
 
-class Activities(int, Enum):
-    no = 0
-    yes = 1
+class Activities(str, Enum):
+    no = "no"
+    yes = "yes"
 
 
-class Nursery(int, Enum):
-    no = 0
-    yes = 1
+class Nursery(str, Enum):
+    no = "no"
+    yes = "yes"
 
 
 class FamilyRelationship(int, Enum):
@@ -100,23 +101,22 @@ class GoOut(int, Enum):
     very_high = 5
 
 
-class Internet(int, Enum):
-    no = 0
-    yes = 1
+class Internet(str, Enum):
+    no = "no"
+    yes = "yes"
 
 
 
-class Romantic(int, Enum):
-    no = 0
-    yes = 1
-
-
+class Romantic(str, Enum):
+    no = "no"
+    yes = "yes"
 
 
 
 
 
 class StudentDetails(BaseModel):
+    student_id: int
     sex: SexType
     age: int
     address: addressType
@@ -137,6 +137,43 @@ class StudentDetails(BaseModel):
     goout: GoOut
     internet: Internet
     romantic: Romantic
+
+
+
+
+
+
+
+
+class StudentDataDataBase(StudentDetails):
+    
+    sex: SexType
+    age: int
+    address: addressType
+    famsize: famSize
+    Pstatus: pStatus
+    guardian: Guardian
+    traveltime: travel_time
+    studytime: study_time
+    failures: Failures
+    schoolsup: Schoolsup
+    famsup: Famsup
+    activities: Activities
+    nursery: Nursery
+    famrel: FamilyRelationship
+    health: HealthStatus
+    absences: int
+    freetime: FreeTime
+    goout: GoOut
+    internet: Internet
+    romantic: Romantic
+
+
+
+
+class StudentResponse(StudentDataDataBase):
+    Prediction: str
+
 
 
 
