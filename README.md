@@ -3,6 +3,8 @@ Project Overview:
 This project is a backend system focused on predicting the performance of a student according to his individual qualities.
 
 
+
+MACHINE LEARNING DOCUMENTATION
 Dataset Summary:
 The Student Performance Dataset is a publicly available educational dataset from the UCI Machine Learning Repository. It contains detailed student records from Portuguese secondary schools, designed to support research on academic achievement modeling and predictive analytics.
 Here is the link to the dataset: https://archive.ics.uci.edu/dataset/320/student+performance
@@ -50,8 +52,8 @@ Used VotingClassifier from sklearn to merge the models
 
 
 
-BACKEND DEVELOPMENT
-Using a database to store records of predictions made with data used for prediction
+BACKEND DEVELOPMENT DOCUMENTATION
+Using a SQLite database to store records of students with their respective predictions
 
 
 

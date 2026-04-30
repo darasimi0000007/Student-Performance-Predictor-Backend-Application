@@ -47,16 +47,41 @@ async def home():
 
 
 
+
+
+
+
+
+
 #prediction using json data
-@app.post("/predict_json")
+@app.post("/predict_json", status_code = status.HTTP_202_ACCEPTED, tags = ["Prediction"])
 async def predict_json(request: Request):
     #user feeds json that contains the student details for prediction
-
-    input_data = await request.json()
-    input_df = pd.DataFrame(input_data)
     
-    #predicting with the json data
-    predicted_data = clf.predict(input_df)[0]
+    try:
+        input_data = await request.json()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON format. Please provide valid JSON data."
+        )
+    
+    try:
+        input_df = pd.DataFrame(input_data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to convert JSON to DataFrame. Check data structure."
+        )
+    
+    try:
+        #predicting with the json data
+        predicted_data = clf.predict(input_df)[0]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Prediction failed. Ensure JSON contains all required features. Error: {str(e)}"
+        )
 
     if predicted_data == 0:
         return {"Prediction": "Fail"}
@@ -68,8 +93,9 @@ async def predict_json(request: Request):
 
 
 
+
 #prediction using raw input
-@app.post("/predict_raw")
+@app.post("/predict_raw", status_code = status.HTTP_202_ACCEPTED, tags = ["Prediction"])
 async def predict_raw(item: schema.StudentDetails, db: Session = Depends(get_db)):
 
     h = item.model_dump(exclude={"student_id"})
@@ -79,27 +105,39 @@ async def predict_raw(item: schema.StudentDetails, db: Session = Depends(get_db)
 
 
     # making prediction with the preprocessed json data and the ml model
-    prediction = clf.predict(df)
-    prediction_final = ["Pass" if (x == 1) else "Fail" for x in prediction]
+    try:
+        prediction = clf.predict(df)
+
+        prediction_final = ["Pass" if (x == 1) else "Fail" for x in prediction]
 
 
-    #save into student details database
-    new_blog = models.Blog(student_id = item.student_id, sex = item.sex, age = item.age, 
-                           address = item.address, famsize = item.famsize, 
-                           Pstatus = item.Pstatus, guardian = item.guardian, 
-                           traveltime = item.traveltime, studytime = item.studytime, 
-                           failures = item.failures, schoolsup = item.schoolsup, 
-                           famsup = item.famsup, activities = item.activities, 
-                           nursery = item.nursery, famrel = item.famrel, 
-                           health = item.health, absences = item.absences, 
-                           freetime = item.freetime, goout = item.goout, 
-                           internet = item.internet, romantic = item.romantic,
-                           Prediction = prediction_final[0])
-    db.add(new_blog)
-    db.commit()
-    db.refresh(new_blog)
+        #save into student details database
+        new_blog = models.Blog(student_id = item.student_id, sex = item.sex, age = item.age, 
+                            address = item.address, famsize = item.famsize, 
+                            Pstatus = item.Pstatus, guardian = item.guardian, 
+                            traveltime = item.traveltime, studytime = item.studytime, 
+                            failures = item.failures, schoolsup = item.schoolsup, 
+                            famsup = item.famsup, activities = item.activities, 
+                            nursery = item.nursery, famrel = item.famrel, 
+                            health = item.health, absences = item.absences, 
+                            freetime = item.freetime, goout = item.goout, 
+                            internet = item.internet, romantic = item.romantic,
+                            Prediction = prediction_final[0])
+        db.add(new_blog)
+        db.commit()
+        db.refresh(new_blog)
+        
+        return {"Prediction": prediction_final[0]}
+
+
+
+    #dealing with incomplete filling of student details
+    except Exception as e:
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail = "Prediction failed. Ensure Input is all filled out and contains all required features"
+        )
     
-    return {"Prediction": prediction_final[0]}
 
 
 
@@ -113,7 +151,7 @@ async def predict_raw(item: schema.StudentDetails, db: Session = Depends(get_db)
 
 
 #this is for getting all students' past records and prediction data
-@app.get("/get_all_records")
+@app.get("/get_all_records", tags = ["Students' Record"])
 async def get_all_records(db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return blogs
@@ -124,10 +162,8 @@ async def get_all_records(db: Session = Depends(get_db)):
 
 
 
-
-
 #getting student's record according to student's student_id
-@app.get("/get_all_records/{id_number}")
+@app.get("/get_all_records/{id_number}", tags = ["Students' Record"])
 def get_record_by_id(id_number, response: Response, db: Session = Depends(get_db)):
 
     blogs = db.query(models.Blog).filter(models.Blog.student_id == id_number).first()
@@ -142,12 +178,8 @@ def get_record_by_id(id_number, response: Response, db: Session = Depends(get_db
 
 
 
-
-
-
-
 #deleting a student's record using his or her student_id
-@app.delete("/get_all_records/{id_number}", status_code = status.HTTP_200_OK)
+@app.delete("/get_all_records/{id_number}", status_code = status.HTTP_200_OK, tags = ["Students' Record"])
 
 async def destroy(id_number, db: Session = Depends(get_db)):
 
@@ -173,3 +205,23 @@ async def destroy(id_number, db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+#look into shap to explain features that were vital to a prediction and 
+#suggest advices based on predictions, 
+# 
+# 
+# implement a teachers database for authentication, teachers are the only ones that can make predictions on behalf of students
+
+
+#school admin for modifying student prediction records, 
+# 
+# 
+# students database for authentication as well to allow students to just view their SHAP analysis on their respective predictions
