@@ -8,3 +8,4 @@ seaborn
 ipykernel
 imbalanced-learn
 sqlalchemy
+shap

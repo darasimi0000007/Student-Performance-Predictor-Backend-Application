@@ -94,7 +94,7 @@ async def predict_json(request: Request):
 
 
 
-#prediction using raw input
+#prediction using raw input and storing it into database
 @app.post("/predict_raw", status_code = status.HTTP_202_ACCEPTED, tags = ["Prediction"])
 async def predict_raw(item: schema.StudentDetails, db: Session = Depends(get_db)):
 

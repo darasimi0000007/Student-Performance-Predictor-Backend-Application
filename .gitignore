@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 studentproject_venv/
 data/
+StudentDetails.db/
 
 # C extensions
 *.so
