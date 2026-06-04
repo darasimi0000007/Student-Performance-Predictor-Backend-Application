@@ -1,9 +1,9 @@
 import streamlit as st
-from utils import inject_css, render_sidebar, require_staff, api_get_student, api_get_shap_chart
+from utils import inject_css, render_sidebar, require_teacher, api_get_student, api_get_shap_chart
 
 st.set_page_config(page_title="ScholarSight – SHAP Analysis", page_icon="🧠", layout="wide")
 inject_css()
-require_staff()
+require_teacher()
 render_sidebar()
 
 st.markdown("""
@@ -30,7 +30,7 @@ student_id = st.text_input(
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Fetch and display analysis ────────────────────────────────────────────────
-if student_id.strip():
+if student_id and student_id.strip():
     student_id = student_id.strip()
 
     with st.spinner("Fetching student data and generating SHAP analysis..."):
@@ -82,7 +82,7 @@ if student_id.strip():
         </p>
         """, unsafe_allow_html=True)
 
-        st.image(shap_chart, caption="SHAP Summary Plot (Bar)", use_column_width=True)
+        st.image(shap_chart, caption="SHAP Summary Plot (Bar)", width="stretch")
         st.markdown('</div>', unsafe_allow_html=True)
 
     elif shap_err:

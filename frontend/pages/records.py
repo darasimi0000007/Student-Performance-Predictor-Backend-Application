@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-from utils import inject_css, render_sidebar, require_staff, api_get_all_students, api_delete_student, get_role
+from utils import inject_css, render_sidebar, require_teacher, api_get_all_students, api_delete_student, get_role
 
 st.set_page_config(page_title="ScholarSight – Student Records", page_icon="🗂️", layout="wide")
 inject_css()
-require_staff()
+require_teacher()
 render_sidebar()
 
 st.markdown("""
@@ -67,14 +67,14 @@ else:
             search_term = st.text_input("Search by Student ID", placeholder="Enter student ID...")
         with col_export:
             st.markdown('<div style="height:1.5rem;"></div>', unsafe_allow_html=True)
-            if st.button("📥 Export as CSV", use_container_width=True):
+            if st.button("📥 Export as CSV", width="stretch"):
                 csv = df.to_csv(index=False)
                 st.download_button(
                     label="Download CSV",
                     data=csv,
                     file_name="student_records.csv",
                     mime="text/csv",
-                    use_container_width=True
+                    width="stretch"
                 )
 
         # Filter based on search
@@ -108,7 +108,7 @@ else:
 
         st.dataframe(
             display_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -127,7 +127,7 @@ else:
             if student_to_delete:
                 col_confirm, col_cancel = st.columns(2)
                 with col_confirm:
-                    if st.button("🗑️ Confirm Delete", use_container_width=True, type="primary"):
+                    if st.button("🗑️ Confirm Delete", width="stretch", type="primary"):
                         success, msg = api_delete_student(student_to_delete)
                         if success:
                             st.markdown(f'<div class="alert-success">✅ {msg}</div>', unsafe_allow_html=True)

@@ -10,3 +10,8 @@ imbalanced-learn
 sqlalchemy
 shap
 streamlit
+plotly
+passlib
+bcrypt
+python-jose
+passlib[argon2]

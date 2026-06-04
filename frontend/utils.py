@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+from fastapi import HTTPException, status
 
 
 API_BASE = "http://127.0.0.1:8000"
@@ -321,100 +322,147 @@ def render_logo():
 
 
 # ──────────────────────────────────────────
-#  Auth helpers (mock layer)
+#  Auth helpers (Token-based JWT system)
 # ──────────────────────────────────────────
-MOCK_USERS = {
-    "admin":   {"password": "admin123",   "role": "admin",   "name": "Admin User"},
-    "teacher": {"password": "teacher123", "role": "teacher", "name": "Ms. Thompson"},
-    "student": {"password": "student123", "role": "student", "name": "Alex Johnson", "student_id": "STU001"},
-}
-
-def login(username: str, password: str):
-    user = MOCK_USERS.get(username.lower())
-    if user and user["password"] == password:
-        return user
-    return None
 
 def is_logged_in():
-    return st.session_state.get("user") is not None
+    """Check if user is authenticated with valid token."""
+    user = st.session_state.get("user")
+    return user is not None and user.get("access_token") is not None
 
 def get_user():
+    """Get the current logged-in user data."""
     return st.session_state.get("user", {})
 
 def get_role():
-    return get_user().get("role", "")
+    """Get the role of the current user from institution_id (student or teacher)."""
+    user = get_user()
+    institution_id = user.get("institution_id", "").lower()
+    
+    if institution_id.startswith("stu"):
+        return "student"
+    elif institution_id.startswith("tea"):
+        return "teacher"
+    return None
+
+def get_access_token():
+    """Get the JWT access token for API requests."""
+    user = get_user()
+    return user.get("access_token")
 
 def require_login():
+    """Redirect to login if not authenticated."""
     if not is_logged_in():
         st.switch_page("app.py")
         st.stop()
 
-def require_staff():
+def require_teacher():
+    """Require user to be a teacher. Redirect to dashboard if not."""
     require_login()
-    if get_role() not in ("teacher", "admin"):
-        st.error("⛔ Access denied. Staff only.")
+    if get_role() != "teacher":
+        st.error("⛔ Access denied. Teachers only.")
+        st.stop()
+
+def require_student():
+    """Require user to be a student. Redirect to dashboard if not."""
+    require_login()
+    if get_role() != "student":
+        st.error("⛔ Access denied. Students only.")
         st.stop()
 
 
 # ──────────────────────────────────────────
-#  API wrappers
+#  API wrappers with JWT authentication
 # ──────────────────────────────────────────
-def api_predict(payload: dict):
+def _get_auth_headers():
+    """Get Authorization headers with JWT token."""
+    token = get_access_token()
+    if token:
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+def api_predict(data: dict):
+    """Make a prediction request to the backend."""
     try:
-        r = requests.post(f"{API_BASE}/predict", json=payload, timeout=15)
+        headers = _get_auth_headers()
+        r = requests.post(f"{API_BASE}/predict/", json=data, headers=headers, timeout=30)
         r.raise_for_status()
         return r.json(), None
     except requests.exceptions.ConnectionError:
-        return None, "Cannot reach the backend server. Is FastAPI running?"
+        return None, "Cannot reach the backend server."
     except requests.exceptions.HTTPError as e:
-        return None, f"Server error {e.response.status_code}: {e.response.text}"
+        status = e.response.status_code if e.response else "Unknown"
+        try:
+            detail = e.response.json().get("detail", "No detail")
+        except Exception:
+            detail = e.response.text if e.response else "No response"
+        return None, f"Prediction failed ({status_code}): {detail}"
     except Exception as e:
         return None, str(e)
 
 def api_get_student(student_id: str):
+    """Get details of a specific student."""
     try:
-        r = requests.get(f"{API_BASE}/students/{student_id}", timeout=10)
+        headers = _get_auth_headers()
+        r = requests.get(f"{API_BASE}/students/{student_id}", headers=headers, timeout=10)
         if r.status_code == 404:
             return None, "Student not found."
         r.raise_for_status()
         return r.json(), None
     except requests.exceptions.ConnectionError:
         return None, "Cannot reach the backend server."
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response else "Unknown"
+        return None, f"Failed to fetch student: {status}"
     except Exception as e:
         return None, str(e)
 
 def api_get_all_students():
+    """Fetch all students (teacher only)."""
     try:
-        r = requests.get(f"{API_BASE}/students", timeout=10)
+        headers = _get_auth_headers()
+        r = requests.get(f"{API_BASE}/students", headers=headers, timeout=10)
         r.raise_for_status()
         return r.json(), None
     except requests.exceptions.ConnectionError:
         return None, "Cannot reach the backend server."
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response else "Unknown"
+        return None, f"Failed to fetch students: {status}"
     except Exception as e:
         return None, str(e)
 
 def api_delete_student(student_id: str):
+    """Delete a student record (teacher only)."""
     try:
-        r = requests.delete(f"{API_BASE}/students/{student_id}", timeout=10)
+        headers = _get_auth_headers()
+        r = requests.delete(f"{API_BASE}/students/{student_id}", headers=headers, timeout=10)
         if r.status_code == 404:
             return False, "Student not found."
         r.raise_for_status()
         return True, None
     except requests.exceptions.ConnectionError:
         return False, "Cannot reach the backend server."
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response else "Unknown"
+        return False, f"Delete failed: {status}"
     except Exception as e:
         return False, str(e)
 
 def api_get_shap_chart(student_id: str):
-    """Returns raw image bytes from the SHAP bar chart endpoint."""
+    """Get SHAP analysis chart for a student (returns image bytes)."""
     try:
-        r = requests.get(f"{API_BASE}/students/{student_id}/shap", timeout=20)
+        headers = _get_auth_headers()
+        r = requests.get(f"{API_BASE}/students/{student_id}/shap", headers=headers, timeout=20)
         if r.status_code == 404:
             return None, "No SHAP analysis found for this student."
         r.raise_for_status()
         return r.content, None
     except requests.exceptions.ConnectionError:
         return None, "Cannot reach the backend server."
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response else "Unknown"
+        return None, f"Failed to fetch SHAP chart: {status}"
     except Exception as e:
         return None, str(e)
 
@@ -423,42 +471,44 @@ def api_get_shap_chart(student_id: str):
 #  Sidebar renderer (shared across pages)
 # ──────────────────────────────────────────
 def render_sidebar():
+    """Render the main navigation sidebar."""
     with st.sidebar:
         render_logo()
         user = get_user()
         role = get_role()
+        email = user.get('email', 'User')
+        institution_id = user.get('institution_id', '')
 
         role_badge_map = {
-            "admin":   "badge-role-admin",
             "teacher": "badge-role-teacher",
             "student": "badge-role-student",
         }
         badge_cls = role_badge_map.get(role, "badge-role-student")
+        
         st.markdown(f"""
         <div style="padding: 0 0.5rem 1rem;">
             <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:4px;">Logged in as</div>
-            <div style="font-size:1rem; font-weight:600; color:#F1F5F9; margin-bottom:6px;">{user.get('name','')}</div>
-            <span class="{badge_cls}">{role.upper()}</span>
+            <div style="font-size:0.95rem; font-weight:600; color:#F1F5F9; margin-bottom:6px; word-break:break-word;">{email}</div>
+            <span class="{badge_cls}">{role.upper() if role else 'USER'}</span>
         </div>
         <hr class="ss-divider" style="margin:0.5rem 0 1rem;" />
         """, unsafe_allow_html=True)
 
-        st.page_link("app.py",               label="🏠  Home",           )
-        st.page_link("pages/dashboard.py",    label="📊  Dashboard",      )
+        st.page_link("pages/dashboard.py", label="📊  Dashboard")
 
-        if role in ("teacher", "admin"):
-            st.markdown('<div style="color:#64748B;font-size:0.72rem;letter-spacing:0.08em;padding:0.6rem 0.5rem 0.2rem;">STAFF TOOLS</div>', unsafe_allow_html=True)
+        if role == "teacher":
+            st.markdown('<div style="color:#64748B;font-size:0.72rem;letter-spacing:0.08em;padding:0.6rem 0.5rem 0.2rem;">TEACHER TOOLS</div>', unsafe_allow_html=True)
             st.page_link("pages/predict.py",  label="🔮  Make Prediction")
             st.page_link("pages/records.py",  label="🗂️  Student Records")
             st.page_link("pages/analysis.py", label="🧠  SHAP Analysis")
 
         if role == "student":
-            st.markdown('<div style="color:#64748B;font-size:0.72rem;letter-spacing:0.08em;padding:0.6rem 0.5rem 0.2rem;">MY PORTAL</div>', unsafe_allow_html=True)
+            st.markdown('<div style="color:#64748B;font-size:0.72rem;letter-spacing:0.08em;padding:0.6rem 0.5rem 0.2rem;">STUDENT PORTAL</div>', unsafe_allow_html=True)
             st.page_link("pages/my_record.py",  label="📋  My Record")
             st.page_link("pages/my_analysis.py",label="🔍  My Analysis")
 
         st.markdown('<hr class="ss-divider" style="margin-top:auto;">', unsafe_allow_html=True)
-        if st.button("Sign Out", key="signout_btn"):
+        if st.button("Sign Out", key="signout_btn", width="stretch"):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.switch_page("app.py")

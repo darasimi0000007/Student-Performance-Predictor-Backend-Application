@@ -113,22 +113,22 @@ class Romantic(str, Enum):
 
 
 
-class ListWrapperModel(BaseModel):
-    @model_validator(mode='before')
-    @classmethod
-    def wrap_all_fields_in_lists(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            for key, value in data.items():
-                # Wrap in list if it's not a list, None, or a dict
-                if value is not None and not isinstance(value, (list, dict)):
-                    data[key] = [value]
-        return data
+# class ListWrapperModel(BaseModel):
+#     @model_validator(mode='before')
+#     @classmethod
+#     def wrap_all_fields_in_lists(cls, data: Any) -> Any:
+#         if isinstance(data, dict):
+#             for key, value in data.items():
+#                 # Wrap in list if it's not a list, None, or a dict
+#                 if value is not None and not isinstance(value, (list, dict)):
+#                     data[key] = [value]
+#         return data
 
 
 
 
-class StudentDetails(ListWrapperModel):
-    student_id: int = Field(..., description = "Student's Identification Number")
+class StudentDetails(BaseModel):
+    student_id: str = Field(..., description = "Student's Identification Number")
     sex: SexType = Field(..., description = "Sex of the student; M or F")
     age: int = Field(..., description = "Student's age")
     address: addressType = Field(..., description = "Rural(R) or Urban(U)")
@@ -187,8 +187,40 @@ class SHAPAnalysisData(StudentDetails):
         from_attributes = True
 
 
+class User(BaseModel):
+    firstname: str
+    lastname: str
+    institution_id: str
+    email: str
+    password: str
+    confirm_password: str
+
+
+class UserExtended(User):
+    firstname: str
+    lastname: str
+    role: str
+    institution_id: str
+    email: str
+    password: str
+    confirm_password: str
+
+    class Config():
+        from_attributes = True
+
+
+#pydantic schema for authentication
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    email: str | None = None
+    scopes: list[str] = []
 
 
 
-
-
+class RoleCheck(BaseModel):
+    email: str
+    institution_id: str #STU123 #TEA999

@@ -1,13 +1,13 @@
 import streamlit as st
-from utils import inject_css, render_sidebar, require_login, get_user, api_get_shap_chart
+from utils import inject_css, render_sidebar, require_student, get_user, api_get_shap_chart
 
 st.set_page_config(page_title="ScholarSight – My Analysis", page_icon="🔍", layout="wide")
 inject_css()
-require_login()
+require_student()
 render_sidebar()
 
 user = get_user()
-student_id = user.get("student_id", "")
+institution_id = user.get("institution_id", "")
 
 st.markdown("""
 <div class="page-header">
@@ -16,15 +16,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-if not student_id:
+if not institution_id:
     st.markdown("""
     <div class="alert-error">
-        ⚠️ No student ID associated with your account.
+        ⚠️ No institution ID associated with your account.
     </div>
     """, unsafe_allow_html=True)
 else:
     with st.spinner("Generating your SHAP analysis..."):
-        shap_chart, err = api_get_shap_chart(student_id)
+        shap_chart, err = api_get_shap_chart(institution_id)
 
     if err:
         st.markdown(f"""
@@ -45,7 +45,7 @@ else:
         </p>
         """, unsafe_allow_html=True)
 
-        st.image(shap_chart, caption="SHAP Summary Plot - Your Feature Impact", use_column_width=True)
+        st.image(shap_chart, caption="SHAP Summary Plot - Your Feature Impact", width="stretch")
         st.markdown('</div>', unsafe_allow_html=True)
 
     else:

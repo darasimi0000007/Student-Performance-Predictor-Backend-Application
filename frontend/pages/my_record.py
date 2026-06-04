@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
-from utils import inject_css, render_sidebar, require_login, get_user, api_get_student
+from utils import inject_css, render_sidebar, require_student, get_user, api_get_student
 
 st.set_page_config(page_title="ScholarSight – My Record", page_icon="📋", layout="wide")
 inject_css()
-require_login()
+require_student()
 render_sidebar()
 
 user = get_user()
-student_id = user.get("student_id", "")
+institution_id = user.get("institution_id", "")
 
 st.markdown("""
 <div class="page-header">
@@ -17,15 +17,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-if not student_id:
+if not institution_id:
     st.markdown("""
     <div class="alert-error">
-        ⚠️ No student ID associated with your account. Please contact administration.
+        ⚠️ No institution ID associated with your account. Please contact administration.
     </div>
     """, unsafe_allow_html=True)
 else:
     with st.spinner("Loading your record..."):
-        student_data, err = api_get_student(student_id)
+        student_data, err = api_get_student(institution_id)
 
     if err:
         st.markdown(f"""
@@ -111,8 +111,8 @@ else:
 
         col_button, _ = st.columns([1, 3])
         with col_button:
-            if st.button("🧠 View My SHAP Analysis", use_container_width=True):
-                st.session_state["analysis_student_id"] = student_id
+            if st.button("🧠 View My SHAP Analysis", width="stretch"):
+                st.session_state["analysis_student_id"] = institution_id
                 st.switch_page("pages/my_analysis.py")
 
     else:

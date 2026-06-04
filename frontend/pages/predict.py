@@ -1,9 +1,9 @@
 import streamlit as st
-from utils import inject_css, render_sidebar, require_staff, api_predict
+from utils import inject_css, render_sidebar, require_teacher, api_predict
 
 st.set_page_config(page_title="ScholarSight – Predict", page_icon="🔮", layout="wide")
 inject_css()
-require_staff()
+require_teacher()
 render_sidebar()
 
 st.markdown("""
@@ -83,9 +83,11 @@ with col_form:
     with c2:
         romantic = st.selectbox("Student in Romantic Relationship", ["yes", "no"])
 
+   
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-    submit = st.button("Generate Prediction  →", use_container_width=True, key="predict_btn")
+    submit = st.button("Generate Prediction  →", width="stretch", key="predict_btn")
 
 # ── Result panel ─────────────────────────────────────────────────────────────
 with col_result:
@@ -107,15 +109,9 @@ with col_result:
             st.markdown('<div class="alert-error">⚠️ Student ID is required.</div>', unsafe_allow_html=True)
         else:
             # Build payload
-            import json as _json
-            try:
-                extra = _json.loads(extra_json) if extra_json.strip() else {}
-            except Exception:
-                extra = {}
-                st.markdown('<div class="alert-info">⚠️ Could not parse extra JSON — ignored.</div>', unsafe_allow_html=True)
-
             payload = {
                 "student_id":       student_id.strip(),
+                "sex":              sex,
                 "age":              age,
                 "address":       address,
                 "famsize":       famsize,
@@ -135,7 +131,6 @@ with col_result:
                 "goout":           goout,
                 "internet":       internet,
                 "romantic":       romantic,
-                **extra
             }
 
             with st.spinner("Running prediction model…"):
@@ -143,7 +138,7 @@ with col_result:
 
             if err:
                 result_placeholder.markdown(f'<div class="alert-error">❌ {err}</div>', unsafe_allow_html=True)
-            else:
+            elif res:
                 prediction = res.get("prediction", res.get("result", ""))
                 confidence = res.get("confidence", res.get("probability", None))
                 is_pass    = str(prediction).lower() in ("pass", "1", "true")
@@ -172,9 +167,11 @@ with col_result:
                     st.json(res)
 
                 st.markdown('<hr class="ss-divider">', unsafe_allow_html=True)
-                if st.button("🧠 View SHAP Analysis for this Student", use_container_width=True):
+                if st.button("🧠 View SHAP Analysis for this Student", width="stretch"):
                     st.session_state["analysis_student_id"] = student_id.strip()
                     st.switch_page("pages/analysis.py")
+            else:
+                result_placeholder.markdown('<div class="alert-error">❌ Unexpected error: no response data.</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 

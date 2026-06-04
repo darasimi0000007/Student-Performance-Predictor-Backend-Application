@@ -1,5 +1,6 @@
 import streamlit as st
-from utils import inject_css, login, is_logged_in, get_role
+import requests
+from utils import inject_css, is_logged_in
 
 st.set_page_config(
     page_title="ScholarSight – Login",
@@ -7,16 +8,18 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="collapsed",
 )
+
 inject_css()
 
-# Already logged in → go to dashboard
+# Redirect if already logged in
 if is_logged_in():
     st.switch_page("./pages/dashboard.py")
 
-# ── Hero ──────────────────────────────────────────────────────────────────────
+API_BASE = "http://127.0.0.1:8000"
+
+# ── Hero Section ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* hide sidebar toggle on login page */
 [data-testid="collapsedControl"] { display: none !important; }
 section[data-testid="stSidebar"] { display: none !important; }
 
@@ -54,42 +57,43 @@ section[data-testid="stSidebar"] { display: none !important; }
     margin: 0 auto;
     box-shadow: 0 20px 60px #00000055;
 }
-.divider-text {
-    text-align: center;
-    color: #475569;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    margin: 1.2rem 0;
-    position: relative;
-}
-.divider-text::before, .divider-text::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    width: 38%;
+.divider-line {
     height: 1px;
-    background: #334155;
+    background: linear-gradient(90deg, #334155 0%, #33415500 100%);
+    margin: 1.5rem 0;
+    border: none;
 }
-.divider-text::before { left: 0; }
-.divider-text::after  { right: 0; }
-
-.demo-grid {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem;
-    margin-top: 0.5rem;
-}
-.demo-tile {
-    background: #0F172A;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 0.65rem 0.5rem;
+.signup-link {
     text-align: center;
-    cursor: pointer;
+    color: #94A3B8;
+    font-size: 0.9rem;
+    margin-top: 1.5rem;
 }
-.demo-tile .dt-role { font-size: 0.68rem; color: #64748B; text-transform:uppercase; letter-spacing:0.06em; }
-.demo-tile .dt-user { font-size: 0.82rem; font-weight:600; color:#CBD5E1; margin:3px 0; }
-.demo-tile .dt-pass { font-size: 0.72rem; color:#475569; font-family:'DM Mono',monospace; }
+.signup-link a {
+    color: #2563EB;
+    text-decoration: none;
+    font-weight: 600;
+}
+.signup-link a:hover {
+    text-decoration: underline;
+}
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #CBD5E1;
+    margin-bottom: 0.4rem;
+    display: block;
+}
 </style>
 
+
+
+""", unsafe_allow_html=True)  
+
+
+
+# ── Display Logo ──────────────────────────────────────────────────────────────
+st.markdown("""
 <div class="login-hero">
     <div class="login-logo-icon">🎓</div>
     <div class="login-title">ScholarSight</div>
@@ -97,53 +101,96 @@ section[data-testid="stSidebar"] { display: none !important; }
 </div>
 """, unsafe_allow_html=True)
 
-# ── Login form ────────────────────────────────────────────────────────────────
-_, col, _ = st.columns([0.5, 3, 0.5])
-with col:
+# ── Login Form ────────────────────────────────────────────────────────────────
+_, col_main, _ = st.columns([0.5, 3, 0.5])
+
+with col_main:
     st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
-    st.markdown('<p style="color:#94A3B8;font-size:0.9rem;margin-bottom:1rem;font-weight:600;">Sign in to your account</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#94A3B8;font-size:0.9rem;margin-bottom:1.5rem;font-weight:600;">Sign in to your account</p>', unsafe_allow_html=True)
 
-    username = st.text_input("Username", placeholder="Enter username", key="login_username")
-    password = st.text_input("Password", placeholder="Enter password", type="password", key="login_password")
+    # Institution ID field
+    st.markdown('<p class="form-label">🏫 Institution ID</p>', unsafe_allow_html=True)
+    institution_id = st.text_input(
+        label="Institution ID",
+        placeholder="STU001234 or TEA005678",
+        key="login_institution_id",
+        label_visibility="collapsed",
+        help="Your institution ID (starts with STU or TEA)"
+    )
 
-    if st.button("Sign In  →", use_container_width=True, key="login_btn"):
-        if not username or not password:
-            st.markdown('<div class="alert-error">Please enter both username and password.</div>', unsafe_allow_html=True)
+    # Email login field
+    st.markdown('<p class="form-label">✉️ Email Address</p>', unsafe_allow_html=True)
+    email = st.text_input(
+        label="Email",
+        placeholder="your.email@institution.com",
+        key="login_email",
+        label_visibility="collapsed",
+        help="The email you registered with"
+    )
+
+    # Password field
+    st.markdown('<p class="form-label">🔐 Password</p>', unsafe_allow_html=True)
+    password = st.text_input(
+        label="Password",
+        type="password",
+        placeholder="••••••••",
+        key="login_password",
+        label_visibility="collapsed"
+    )
+
+    if st.button("Sign In  →", width="stretch", key="login_btn"):
+        if not institution_id or not email or not password:
+            st.markdown('<div class="alert-error">❌ Please fill in all fields.</div>', unsafe_allow_html=True)
         else:
-            user = login(username, password)
-            if user:
-                st.session_state["user"] = user
-                st.success(f"Welcome back, {user['name']}!")
-                st.switch_page("./pages/dashboard.py")
-            else:
-                st.markdown('<div class="alert-error">Invalid credentials. Please try again.</div>', unsafe_allow_html=True)
+            # Call backend login endpoint
+            try:
+                # Use form-data format for OAuth2PasswordRequestForm compatibility
+                login_data = {
+                    "username": email,  # Backend expects username field for email
+                    "password": password
+                }
+                
+                response = requests.post(
+                    f"{API_BASE}/auth/login",
+                    data=login_data,  # form-encoded instead of JSON
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    access_token = data.get("access_token")
+                    
+                    # Store user session with token and institution_id
+                    st.session_state["user"] = {
+                        "email": email,
+                        "institution_id": institution_id,
+                        "access_token": access_token,
+                        "token_type": data.get("token_type", "bearer")
+                    }
+                    
+                    st.markdown('<div class="alert-success">✅ Login successful! Redirecting to dashboard...</div>', unsafe_allow_html=True)
+                    st.switch_page("./pages/dashboard.py")
+                else:
+                    error_detail = response.json().get("detail", "Invalid credentials")
+                    st.markdown(f'<div class="alert-error">❌ {error_detail}</div>', unsafe_allow_html=True)
+            except requests.exceptions.ConnectionError:
+                st.markdown('<div class="alert-error">❌ Cannot reach the backend server. Is FastAPI running on port 8000?</div>', unsafe_allow_html=True)
+            except Exception as e:
+                st.markdown(f'<div class="alert-error">❌ Error: {str(e)}</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="divider-text">DEMO ACCOUNTS</div>
-    <div class="demo-grid">
-        <div class="demo-tile">
-            <div class="dt-role">Admin</div>
-            <div class="dt-user">admin</div>
-            <div class="dt-pass">admin123</div>
-        </div>
-        <div class="demo-tile">
-            <div class="dt-role">Teacher</div>
-            <div class="dt-user">teacher</div>
-            <div class="dt-pass">teacher123</div>
-        </div>
-        <div class="demo-tile">
-            <div class="dt-role">Student</div>
-            <div class="dt-user">student</div>
-            <div class="dt-pass">student123</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<hr class="divider-line">', unsafe_allow_html=True)
+
+    col_signup_left, col_signup_right = st.columns([1, 1])
+    with col_signup_right:
+        if st.button("Create Account →", key="signup_link_btn", width="stretch"):
+            st.switch_page("./pages/signup.py")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("""
 <p style="text-align:center;color:#334155;font-size:0.75rem;margin-top:2rem;">
-    ScholarSight v1.0 &nbsp;·&nbsp; Powered by Gradient Boosting + SHAP
+    ScholarSight v1.0 &nbsp;&nbsp; Powered by Gradient Boosting + SHAP
 </p>
 """, unsafe_allow_html=True)
+
