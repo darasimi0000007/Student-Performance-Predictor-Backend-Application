@@ -26,7 +26,7 @@ with col_form:
     with c1:
         student_id = st.text_input("Student ID *", placeholder="e.g. 1011", help="Unique student identifier")
     with c2:
-        sex = st.selectbox("Gender", ["Male", "Female"], help="Student's gender")
+        sex = st.selectbox("Gender", ["M", "F"], help="Student's gender")
     with c3:
         age = st.number_input("Age", min_value=10, max_value=30, value=17, step=1)
     with c4:
@@ -166,10 +166,10 @@ with col_result:
                 with st.expander("📄 Full API Response"):
                     st.json(res)
 
-                st.markdown('<hr class="ss-divider">', unsafe_allow_html=True)
-                if st.button("🧠 View SHAP Analysis for this Student", width="stretch"):
-                    st.session_state["analysis_student_id"] = student_id.strip()
-                    st.switch_page("pages/analysis.py")
+                # st.markdown('<hr class="ss-divider">', unsafe_allow_html=True)
+                # if st.button("🧠 View SHAP Analysis for this Student", width="stretch"):
+                #     st.session_state["analysis_student_id"] = student_id.strip()
+                #     st.switch_page("pages/analysis.py")
             else:
                 result_placeholder.markdown('<div class="alert-error">❌ Unexpected error: no response data.</div>', unsafe_allow_html=True)
 

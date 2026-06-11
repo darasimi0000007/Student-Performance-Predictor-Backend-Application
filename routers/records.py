@@ -94,7 +94,7 @@ async def delete_student_default(student_id: str, db: Session = Depends(get_db),
 
 
 
-# Get SHAP analysis chart for a student
+# Get SHAP analysis chart from a teacher's perspective for a specific student
 @router.get("/student/{student_id}/shap")
 async def get_shap_analysis(student_id: str, db: Session = Depends(get_db), clf = Depends(get_model), preproc = Depends(get_preprocessor),
                        current_user: schema.UserExtended = Depends(oauth2.get_current_user)):
@@ -162,3 +162,7 @@ async def get_shap_analysis_default(student_id: str, db: Session = Depends(get_d
                                    clf = Depends(get_model), preproc = Depends(get_preprocessor),
                                    current_user: schema.UserExtended = Depends(oauth2.get_current_user)):
     return await get_shap_analysis(student_id, db, clf, preproc, current_user)
+
+
+
+

@@ -61,8 +61,10 @@ router = APIRouter(
 
 #prediction using raw input and storing it into database
 @router.post("/raw", status_code = status.HTTP_202_ACCEPTED)
-async def predict(item: schema.StudentDetails, db: Session = Depends(get_db), clf = Depends(get_model), preproc = Depends(get_preprocessor),
-                   current_user: schema.UserExtended = Depends(oauth2.get_current_user)):
+async def predict(item: schema.StudentDetails, 
+                          db: Session = Depends(get_db), 
+                          clf = Depends(get_model), 
+                          current_user: schema.UserExtended = Depends(oauth2.get_current_user)):
     
     if current_user.role == "student":
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "Only teachers can access students' records")
@@ -119,17 +121,22 @@ async def predict(item: schema.StudentDetails, db: Session = Depends(get_db), cl
 
     #dealing with incomplete filling of student details
     except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code = status.422_UNPROCESSABLE_ENTITY,
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail = "Prediction failed. {str(e)}}"
         )
+        
 
 
 
 
-@router.post("/") 
-async def predict_wrapper(item: schema.StudentDetails, db: Session = Depends(get_db), 
-                          clf = Depends(get_model), preproc = Depends(get_preprocessor),
-                          current_user: schema.UserExtended = Depends(oauth2.get_current_user)):
-    # Just call your existing predict() function
-    return await predict(item, db, clf, preproc, current_user)
+# @router.post("/", status_code = status.HTTP_202_ACCEPTED, response_model = schema.returnPrediction) 
+# async def predict_wrapper(item: schema.StudentDetails, 
+#                           db: Session = Depends(get_db), 
+#                           clf = Depends(get_model), 
+#                           current_user: schema.UserExtended = Depends(oauth2.get_current_user)):
+    
+
+#     # Just call your existing predict() function
+#     return await predict(item, db, clf, current_user)

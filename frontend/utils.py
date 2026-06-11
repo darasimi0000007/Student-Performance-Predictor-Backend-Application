@@ -385,7 +385,7 @@ def api_predict(data: dict):
     """Make a prediction request to the backend."""
     try:
         headers = _get_auth_headers()
-        r = requests.post(f"{API_BASE}/predict/", json=data, headers=headers, timeout=30)
+        r = requests.post(f"{API_BASE}/predict/raw", json=data, headers=headers, timeout=30)
         r.raise_for_status()
         return r.json(), None
     except requests.exceptions.ConnectionError:
@@ -393,10 +393,10 @@ def api_predict(data: dict):
     except requests.exceptions.HTTPError as e:
         status = e.response.status_code if e.response else "Unknown"
         try:
-            detail = e.response.json().get("detail", "No detail")
+            detail = e.response.json().get("detail", "No detail") if e.response is not  None else "No response"
         except Exception:
             detail = e.response.text if e.response else "No response"
-        return None, f"Prediction failed ({status_code}): {detail}"
+        return None, f"Prediction failed ({e.response.status_code}): {detail}" if e.response is not None else f"Prediction failed: {str(e)}"
     except Exception as e:
         return None, str(e)
 
@@ -453,7 +453,7 @@ def api_get_shap_chart(student_id: str):
     """Get SHAP analysis chart for a student (returns image bytes)."""
     try:
         headers = _get_auth_headers()
-        r = requests.get(f"{API_BASE}/students/{student_id}/shap", headers=headers, timeout=20)
+        r = requests.get(f"{API_BASE}/students/student/{student_id}/shap", headers=headers, timeout=20)
         if r.status_code == 404:
             return None, "No SHAP analysis found for this student."
         r.raise_for_status()
@@ -483,13 +483,14 @@ def render_sidebar():
             "teacher": "badge-role-teacher",
             "student": "badge-role-student",
         }
-        badge_cls = role_badge_map.get(role, "badge-role-student")
-        
+        badge_cls = role_badge_map.get(role or "", "badge-role-student")
+        role_label = role.upper() if role else "USER"
+
         st.markdown(f"""
         <div style="padding: 0 0.5rem 1rem;">
             <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:4px;">Logged in as</div>
             <div style="font-size:0.95rem; font-weight:600; color:#F1F5F9; margin-bottom:6px; word-break:break-word;">{email}</div>
-            <span class="{badge_cls}">{role.upper() if role else 'USER'}</span>
+            <span class="{badge_cls}">{role_label}</span>
         </div>
         <hr class="ss-divider" style="margin:0.5rem 0 1rem;" />
         """, unsafe_allow_html=True)
